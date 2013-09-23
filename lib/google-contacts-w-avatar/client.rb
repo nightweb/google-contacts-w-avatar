@@ -5,15 +5,16 @@ require "cgi"
 
 module MGContacts
   class Client
-    API_URI = {
-      :contacts => {:all => "https://www.google.com/m8/feeds/contacts/default/%s", :create => URI("https://www.google.com/m8/feeds/contacts/default/full"), :get => "https://www.google.com/m8/feeds/contacts/default/%s/%s", :update => "https://www.google.com/m8/feeds/contacts/default/full/%s", :batch => URI("https://www.google.com/m8/feeds/contacts/default/full/batch")},
-      :groups => {:all => "https://www.google.com/m8/feeds/groups/default/%s", :create => URI("https://www.google.com/m8/feeds/groups/default/full"), :get => "https://www.google.com/m8/feeds/groups/default/%s/%s", :update => "https://www.google.com/m8/feeds/groups/default/full/%s", :batch => URI("https://www.google.com/m8/feeds/groups/default/full/batch")}
-    }
+
+
+    attr_accessor :auth_header
+    attr_accessor :gdata_version
 
     ##
     # Initializes a new client
     # @param [Hash] args
     # @option args [String] :access_token OAuth2 access token
+    # @option args [String] :user_email user email, default is default
     # @option args [Symbol] :default_type Which API to call by default, can either be :contacts or :groups, defaults to :contacts
     # @option args [IO, Optional] :debug_output Dump the results of HTTP requests to the given IO
     #
@@ -26,6 +27,12 @@ module MGContacts
       end
 
       @options = {:default_type => :contacts}.merge(args)
+      set_account = args[:user_email] || 'default'
+      @api_uri = {
+          :contacts => {:all => "https://www.google.com/m8/feeds/contacts/#{set_account}/%s", :create => URI("https://www.google.com/m8/feeds/contacts/#{set_account}/full"), :get => "https://www.google.com/m8/feeds/contacts/#{set_account}/%s/%s", :update => "https://www.google.com/m8/feeds/contacts/#{set_account}/full/%s", :batch => URI("https://www.google.com/m8/feeds/contacts/#{set_account}/full/batch")},
+          :groups => {:all => "https://www.google.com/m8/feeds/groups/#{set_account}/%s", :create => URI("https://www.google.com/m8/feeds/groups/#{set_account}/full"), :get => "https://www.google.com/m8/feeds/groups/#{set_account}/%s/%s", :update => "https://www.google.com/m8/feeds/groups/#{set_account}/full/%s", :batch => URI("https://www.google.com/m8/feeds/groups/#{set_account}/full/batch")},
+          :avatar => {:get => "https://www.google.com/m8/feeds/photos/media/#{set_account}/%s/%s", :update => "https://www.google.com/m8/feeds/photos/media/#{set_account}/full/%s"}
+      }
     end
 
     ##
@@ -217,8 +224,8 @@ module MGContacts
 
     def http_request(method, uri, args)
       headers = args[:headers] || {}
-      headers["Authorization"] = "Bearer #{@options[:access_token]}"
-      headers["GData-Version"] = "3.0"
+      headers["Authorization"] = @auth_header || "Bearer #{@options[:access_token]}"
+      headers["GData-Version"] = @gdata_version || "3.0"
 
       http = Net::HTTP.new(uri.host, uri.port)
       http.set_debug_output(@options[:debug_output]) if @options[:debug_output]
