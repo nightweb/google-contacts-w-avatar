@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe MGContacts::Client do
+describe GoogleContacts::Client do
   include Support::ResponseMock
 
   context "contact" do
@@ -9,7 +9,7 @@ describe MGContacts::Client do
         http_mock.should_receive(:request_get).with("/m8/feeds/contacts/default/full?updated-min=1234", hash_including("Authorization" => "Bearer 12341234")).and_return(res_mock)
       end
 
-      client = MGContacts::Client.new(:access_token => "12341234")
+      client = GoogleContacts::Client.new(:access_token => "12341234")
       contacts = client.all(:params => {"updated-min" => "1234"})
 
       contacts.id.should == "john.doe@gmail.com"
@@ -75,7 +75,7 @@ describe MGContacts::Client do
 
       expected_titles = ["Jack 1", "Jack 2", "Jack 3", "Jack 4", "Jack 5"]
 
-      client = MGContacts::Client.new(:access_token => "12341234")
+      client = GoogleContacts::Client.new(:access_token => "12341234")
       client.paginate_all do |entry|
         entry.title.should == expected_titles.shift
       end
@@ -88,19 +88,19 @@ describe MGContacts::Client do
         http_mock.should_receive(:request_get).with("/m8/feeds/contacts/default/full/908f380f4c2f81?a=1", hash_including("Authorization" => "Bearer 12341234")).and_return(res_mock)
       end
 
-      client = MGContacts::Client.new(:access_token => "12341234")
+      client = GoogleContacts::Client.new(:access_token => "12341234")
       element = client.get("908f380f4c2f81", :params => {:a => 1})
 
-      element.should be_a_kind_of(MGContacts::Element)
+      element.should be_a_kind_of(GoogleContacts::Element)
       element.id.should == "http://www.google.com/m8/feeds/contacts/john.doe%40gmail.com/base/3a203c8da7ac0a8"
       element.title.should == "Casey"
       element.edit_uri.should == URI("https://www.google.com/m8/feeds/contacts/john.doe%40gmail.com/base/3a203c8da7ac0a8")
     end
 
     it "creates a new one" do
-      client = MGContacts::Client.new(:access_token => "12341234")
+      client = GoogleContacts::Client.new(:access_token => "12341234")
 
-      element = MGContacts::Element.new
+      element = GoogleContacts::Element.new
       element.category = "contact"
       element.title = "Foo Bar"
       element.data = {"gd:name" => {"gd:fullName" => "Foo Bar", "gd:givenName" => "Foo Bar"}, "gd:email" => {"@rel" => "http://schemas.google.com/g/2005#other", "@address" => "casey@gmail.com", "@primary" => true}}
@@ -110,7 +110,7 @@ describe MGContacts::Client do
       end
 
       created = client.create!(element)
-      created.should be_a_kind_of(MGContacts::Element)
+      created.should be_a_kind_of(GoogleContacts::Element)
       created.id.should == "http://www.google.com/m8/feeds/contacts/john.doe%40gmail.com/base/32c39d7106a538e"
       created.title.should == "Foo Bar"
       created.data.should == {"gd:name" => [{"gd:fullName" => "Foo Bar", "gd:givenName" => "Foo Bar"}], "gd:email" => [{"@rel" => "http://schemas.google.com/g/2005#other", "@address" => "casey@gmail.com", "@primary" => "true"}]}
@@ -118,9 +118,9 @@ describe MGContacts::Client do
     end
 
     it "updates an existing one" do
-      client = MGContacts::Client.new(:access_token => "12341234")
+      client = GoogleContacts::Client.new(:access_token => "12341234")
 
-      element = MGContacts::Element.new(Nori.parse(File.read("spec/responses/contacts/update.xml"))["entry"])
+      element = GoogleContacts::Element.new(Nori.parse(File.read("spec/responses/contacts/update.xml"))["entry"])
       element.title.should == 'Foo "Doe" Bar'
 
       mock_response(File.read("spec/responses/contacts/update.xml")) do |http_mock, res_mock|
@@ -128,7 +128,7 @@ describe MGContacts::Client do
       end
 
       updated = client.update!(element)
-      updated.should be_a_kind_of(MGContacts::Element)
+      updated.should be_a_kind_of(GoogleContacts::Element)
       updated.id.should == "http://www.google.com/m8/feeds/contacts/john.doe%40gmail.com/base/32c39d7106a538e"
       updated.title.should == 'Foo "Doe" Bar'
       updated.data.should == {"gd:name" => [{"gd:fullName" => "Foo \"Doe\" Bar", "gd:givenName" => "Foo Bar", "gd:additionalName" => "\"Doe\""}], "gd:email" => [{"@rel" => "http://schemas.google.com/g/2005#other", "@address" => "casey@gmail.com", "@primary" => "true"}, {"@rel" => "http://schemas.google.com/g/2005#work", "@address" => "foo.bar@gmail.com"}]}
@@ -136,9 +136,9 @@ describe MGContacts::Client do
     end
 
     it "deletes an existing one" do
-      client = MGContacts::Client.new(:access_token => "12341234")
+      client = GoogleContacts::Client.new(:access_token => "12341234")
 
-      element = MGContacts::Element.new(Nori.parse(File.read("spec/responses/contacts/update.xml"))["entry"])
+      element = GoogleContacts::Element.new(Nori.parse(File.read("spec/responses/contacts/update.xml"))["entry"])
 
       mock_response(File.read("spec/responses/contacts/update.xml")) do |http_mock, res_mock|
         http_mock.should_receive(:request) do |request|
@@ -156,9 +156,9 @@ describe MGContacts::Client do
     it "batch creates without an error" do
       Time.any_instance.stub(:iso8601).and_return("2012-04-06T06:02:04Z")
 
-      client = MGContacts::Client.new(:access_token => "12341234")
+      client = GoogleContacts::Client.new(:access_token => "12341234")
 
-      element = MGContacts::Element.new
+      element = GoogleContacts::Element.new
       element.title = "foo bar"
       element.content = "Bar Foo"
       element.data = {"gd:name" => [{"gd:givenName" => "foo bar"}]}
@@ -186,9 +186,9 @@ describe MGContacts::Client do
     it "batch creates with an error" do
       Time.any_instance.stub(:iso8601).and_return("2012-04-06T06:02:04Z")
 
-      client = MGContacts::Client.new(:access_token => "12341234")
+      client = GoogleContacts::Client.new(:access_token => "12341234")
 
-      element = MGContacts::Element.new
+      element = GoogleContacts::Element.new
       element.title = "foo bar"
       element.content = "Bar Foo"
       element.data = {"gd:name" => [{"gd:givenName" => "foo bar"}]}
@@ -220,7 +220,7 @@ describe MGContacts::Client do
         http_mock.should_receive(:request_get).with("/m8/feeds/groups/default/full?updated-min=1234", hash_including("Authorization" => "Bearer 12341234")).and_return(res_mock)
       end
 
-      client = MGContacts::Client.new(:access_token => "12341234", :default_type => :groups)
+      client = GoogleContacts::Client.new(:access_token => "12341234", :default_type => :groups)
       groups = client.all(:params => {"updated-min" => "1234"})
 
       groups.id.should == "john.doe@gmail.com"
@@ -270,7 +270,7 @@ describe MGContacts::Client do
 
       expected_titles = ["Misc 1", "Misc 2"]
 
-      client = MGContacts::Client.new(:access_token => "12341234", :default_type => :groups)
+      client = GoogleContacts::Client.new(:access_token => "12341234", :default_type => :groups)
       client.paginate_all do |entry|
         entry.title.should == expected_titles.shift
       end
@@ -283,10 +283,10 @@ describe MGContacts::Client do
         http_mock.should_receive(:request_get).with("/m8/feeds/groups/default/full/908f380f4c2f81?a=1", hash_including("Authorization" => "Bearer 12341234")).and_return(res_mock)
       end
 
-      client = MGContacts::Client.new(:access_token => "12341234", :default_type => :groups)
+      client = GoogleContacts::Client.new(:access_token => "12341234", :default_type => :groups)
       element = client.get("908f380f4c2f81", :params => {:a => 1})
 
-      element.should be_a_kind_of(MGContacts::Element)
+      element.should be_a_kind_of(GoogleContacts::Element)
       element.id.should == "http://www.google.com/m8/feeds/groups/john.doe%40gmail.com/base/6"
       element.title.should == "System Group: My Contacts"
       element.edit_uri.should be_nil
@@ -294,9 +294,9 @@ describe MGContacts::Client do
     end
 
     it "creates a new one" do
-      client = MGContacts::Client.new(:access_token => "12341234")
+      client = GoogleContacts::Client.new(:access_token => "12341234")
 
-      element = MGContacts::Element.new
+      element = GoogleContacts::Element.new
       element.category = "group"
       element.title = "Foo Bar"
       element.content = "Foo Bar"
@@ -306,7 +306,7 @@ describe MGContacts::Client do
       end
 
       created = client.create!(element)
-      created.should be_a_kind_of(MGContacts::Element)
+      created.should be_a_kind_of(GoogleContacts::Element)
       created.id.should == "http://www.google.com/m8/feeds/groups/john.doe%40gmail.com/base/005d057b3b3d42a"
       created.title.should == "Foo Bar"
       created.data.should == {}
@@ -314,9 +314,9 @@ describe MGContacts::Client do
     end
 
     it "updates an existing one" do
-      client = MGContacts::Client.new(:access_token => "12341234")
+      client = GoogleContacts::Client.new(:access_token => "12341234")
 
-      element = MGContacts::Element.new(Nori.parse(File.read("spec/responses/groups/update.xml"))["entry"])
+      element = GoogleContacts::Element.new(Nori.parse(File.read("spec/responses/groups/update.xml"))["entry"])
       element.title.should == "Bar Bar"
       element.content.should == "Bar Bar"
 
@@ -325,7 +325,7 @@ describe MGContacts::Client do
       end
 
       updated = client.update!(element)
-      updated.should be_a_kind_of(MGContacts::Element)
+      updated.should be_a_kind_of(GoogleContacts::Element)
       updated.id.should == "http://www.google.com/m8/feeds/groups/john.doe%40gmail.com/base/3f93e3738e811d63"
       updated.title.should == "Bar Bar"
       updated.data.should == {}
@@ -333,9 +333,9 @@ describe MGContacts::Client do
     end
 
     it "deletes an existing one" do
-      client = MGContacts::Client.new(:access_token => "12341234")
+      client = GoogleContacts::Client.new(:access_token => "12341234")
 
-      element = MGContacts::Element.new(Nori.parse(File.read("spec/responses/groups/update.xml"))["entry"])
+      element = GoogleContacts::Element.new(Nori.parse(File.read("spec/responses/groups/update.xml"))["entry"])
 
       mock_response(File.read("spec/responses/groups/update.xml")) do |http_mock, res_mock|
         http_mock.should_receive(:request) do |request|
@@ -353,9 +353,9 @@ describe MGContacts::Client do
     it "batch creates without an error" do
       Time.any_instance.stub(:iso8601).and_return("2012-04-06T06:02:04Z")
 
-      client = MGContacts::Client.new(:access_token => "12341234", :default_type => :groups)
+      client = GoogleContacts::Client.new(:access_token => "12341234", :default_type => :groups)
 
-      element = MGContacts::Element.new
+      element = GoogleContacts::Element.new
       element.title = "foo bar"
       element.content = "Bar Foo"
       element.category = "group"
@@ -382,9 +382,9 @@ describe MGContacts::Client do
     it "batch creates with an error" do
       Time.any_instance.stub(:iso8601).and_return("2012-04-06T06:02:04Z")
 
-      client = MGContacts::Client.new(:access_token => "12341234", :default_type => :groups)
+      client = GoogleContacts::Client.new(:access_token => "12341234", :default_type => :groups)
 
-      element = MGContacts::Element.new
+      element = GoogleContacts::Element.new
       element.category = "group"
       element.create
 

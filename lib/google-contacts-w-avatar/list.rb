@@ -1,11 +1,11 @@
-module MGContacts
+module GoogleContacts
   class List
     include Enumerable
 
     attr_reader :id, :updated, :title, :author, :per_page, :start_index, :total_results, :next_uri, :previous_uri, :category
 
     ##
-    # Creates a list of {MGContacts::Element}s based on the given XML from Google
+    # Creates a list of {GoogleContacts::Element}s based on the given XML from Google
     def initialize(data=nil)
       unless data
         @entries = []

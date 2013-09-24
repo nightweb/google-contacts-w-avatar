@@ -1,4 +1,4 @@
-module MGContacts
+module GoogleContacts
   class Unauthorized < RuntimeError; end
   class InvalidKind < RuntimeError; end
   class InvalidRequest < RuntimeError; end

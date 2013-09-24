@@ -1,12 +1,12 @@
 require "spec_helper"
 
-describe MGContacts::Element do
+describe GoogleContacts::Element do
   before :all do
     Nori.parser = :nokogiri
   end
 
   it "changes modifier flags" do
-    element = MGContacts::Element.new
+    element = GoogleContacts::Element.new
 
     element.create
     element.modifier_flag.should == :create
@@ -28,7 +28,7 @@ describe MGContacts::Element do
     end
 
     it "with batch used" do
-      element = MGContacts::Element.new
+      element = GoogleContacts::Element.new
 
       element.create
       xml = element.to_xml(true)
@@ -49,14 +49,14 @@ describe MGContacts::Element do
     end
 
     it "with deleting an entry" do
-      element = MGContacts::Element.new(Nori.parse(File.read("spec/responses/contacts/get.xml"))["entry"])
+      element = GoogleContacts::Element.new(Nori.parse(File.read("spec/responses/contacts/get.xml"))["entry"])
       element.delete
 
       Nori.parse(element.to_xml).should == {"atom:entry" => {"id" => "http://www.google.com/m8/feeds/contacts/john.doe%40gmail.com/full/3a203c8da7ac0a8", "@gd:etag" => '"YzllYTBkNmQwOWRlZGY1YWEyYWI5."', "@xmlns:atom" => "http://www.w3.org/2005/Atom", "@xmlns:gd" => "http://schemas.google.com/g/2005"}}
     end
 
     it "with creating an entry" do
-      element = MGContacts::Element.new
+      element = GoogleContacts::Element.new
       element.category = "contact"
       element.content = "Foo Content"
       element.title = "Foo Title"
@@ -67,14 +67,14 @@ describe MGContacts::Element do
     end
 
     it "updating an entry" do
-      element = MGContacts::Element.new(Nori.parse(File.read("spec/responses/contacts/get.xml"))["entry"])
+      element = GoogleContacts::Element.new(Nori.parse(File.read("spec/responses/contacts/get.xml"))["entry"])
       element.update
 
       Nori.parse(element.to_xml).should == {"atom:entry" => {"id" => "http://www.google.com/m8/feeds/contacts/john.doe%40gmail.com/full/3a203c8da7ac0a8", "atom:category" => {"@scheme" => "http://schemas.google.com/g/2005#kind", "@term" => "http://schemas.google.com/g/2008#contact"}, "updated" => DateTime.parse("2012-04-06T06:02:04Z"), "atom:content" => {"@type" => "text"}, "atom:title" => "Casey", "gd:name" => {"gd:fullName" => "Casey", "gd:givenName" => "Casey"}, "gd:email" => {"@rel" => "http://schemas.google.com/g/2005#other", "@address" => "casey@gmail.com", "@primary" => "true"}, "@gd:etag" => '"YzllYTBkNmQwOWRlZGY1YWEyYWI5."', "@xmlns:atom" => "http://www.w3.org/2005/Atom", "@xmlns:gd" => "http://schemas.google.com/g/2005"}}
     end
 
     it "with contacts" do
-      elements = MGContacts::List.new(Nori.parse(File.read("spec/responses/contacts/all.xml")))
+      elements = GoogleContacts::List.new(Nori.parse(File.read("spec/responses/contacts/all.xml")))
 
       expected = [
         {"id" => "http://www.google.com/m8/feeds/contacts/john.doe%40gmail.com/full/fd8fb1a55f2916e", "atom:category" => {"@scheme" => "http://schemas.google.com/g/2005#kind", "@term" => "http://schemas.google.com/g/2008#contact"}, "updated" => DateTime.parse("2012-04-06T06:02:04Z"), "atom:content" => {"@type" => "text"}, "atom:title" => "Steve Stephson", "gd:name" => {"gd:fullName" => "Steve Stephson", "gd:givenName" => "Steve", "gd:familyName" => "Stephson"}, "gd:email" => [{"@rel" => "http://schemas.google.com/g/2005#other", "@address" => "steve.stephson@gmail.com", "@primary" => "true"}, {"@rel" => "http://schemas.google.com/g/2005#other", "@address" => "steve@gmail.com"}], "gd:phoneNumber" => ["3005004000", "+130020003000"], "@gd:etag" => '"OWUxNWM4MTEzZjEyZTVjZTQ1Mjgy."', "@xmlns:atom" => "http://www.w3.org/2005/Atom", "@xmlns:gd" => "http://schemas.google.com/g/2005", "gContact:groupMembershipInfo"=>{"@deleted" => "false", "@href" => "http://www.google.com/m8/feeds/groups/john.doe%40gmail.com/base/6"}},
@@ -98,7 +98,7 @@ describe MGContacts::Element do
     end
 
     it "with groups" do
-      elements = MGContacts::List.new(Nori.parse(File.read("spec/responses/groups/all.xml")))
+      elements = GoogleContacts::List.new(Nori.parse(File.read("spec/responses/groups/all.xml")))
 
       expected = [
           {"atom:entry" => {"id" => "http://www.google.com/m8/feeds/groups/john.doe%40gmail.com/full/6", "atom:category" => {"@scheme" => "http://schemas.google.com/g/2005#kind", "@term" => "http://schemas.google.com/g/2008#group"}, "updated" => DateTime.parse("2012-04-06T06:02:04Z"), "atom:content" => "System Group: My Contacts", "atom:title" => "System Group: My Contacts", "@gd:etag" => '"YWJmYzA."', "@xmlns:atom" => "http://www.w3.org/2005/Atom", "@xmlns:gd" => "http://schemas.google.com/g/2005"}},

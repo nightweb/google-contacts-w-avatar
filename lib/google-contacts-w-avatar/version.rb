@@ -1,3 +1,3 @@
-module MGContacts
+module GoogleContacts
   VERSION = "0.0.2"
 end

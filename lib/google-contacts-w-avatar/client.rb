@@ -3,7 +3,7 @@ require "nokogiri"
 require "nori"
 require "cgi"
 
-module MGContacts
+module GoogleContacts
   class Client
 
 
@@ -17,9 +17,9 @@ module MGContacts
     # @option args [Symbol] :default_type Which API to call by default, can either be :contacts or :groups, defaults to :contacts
     # @option args [IO, Optional] :debug_output Dump the results of HTTP requests to the given IO
     #
-    # @raise [MGContacts::MissingToken]
+    # @raise [GoogleContacts::MissingToken]
     #
-    # @return [MGContacts::Client]
+    # @return [GoogleContacts::Client]
     def initialize(args)
       unless args[:access_token]
         raise ArgumentError, "Access token must be passed"
@@ -43,7 +43,7 @@ module MGContacts
     #
     # @raise [Net::HTTPError]
     #
-    # @return [MGContacts::List] List containing all the returned entries
+    # @return [GoogleContacts::List] List containing all the returned entries
     def all(args={})
       uri = api_uri[args.delete(:api_type) || @options[:default_type]]
       raise ArgumentError, "Unsupported type given" unless uri
@@ -61,7 +61,7 @@ module MGContacts
     #
     # @raise [Net::HTTPError]
     #
-    # @return [MGContacts::List] List containing all the returned entries
+    # @return [GoogleContacts::List] List containing all the returned entries
     def paginate_all(args={})
       uri = api_uri[args.delete(:api_type) || @options[:default_type]]
       raise ArgumentError, "Unsupported type given" unless uri
@@ -94,9 +94,9 @@ module MGContacts
     # @option args [Symbol, Optional] :type What data type to request, can either be :full or :base, defaults to :base
     #
     # @raise [Net::HTTPError]
-    # @raise [MGContacts::InvalidRequest]
+    # @raise [GoogleContacts::InvalidRequest]
     #
-    # @return [MGContacts::Element] Single entry found on
+    # @return [GoogleContacts::Element] Single entry found on
     def get(id, args={})
       uri = api_uri[args.delete(:api_type) || @options[:default_type]]
       raise ArgumentError, "Unsupported type given" unless uri
@@ -114,11 +114,11 @@ module MGContacts
     # Immediately creates the element on Google
     #
     # @raise [Net::HTTPError]
-    # @raise [MGContacts::InvalidRequest]
-    # @raise [MGContacts::InvalidResponse]
-    # @raise [MGContacts::InvalidKind]
+    # @raise [GoogleContacts::InvalidRequest]
+    # @raise [GoogleContacts::InvalidResponse]
+    # @raise [GoogleContacts::InvalidKind]
     #
-    # @return [MGContacts::Element] Updated element returned from Google
+    # @return [GoogleContacts::Element] Updated element returned from Google
     def create!(element)
       uri = api_uri["#{element.category}s".to_sym]
       raise InvalidKind, "Unsupported kind #{element.category}" unless uri
@@ -135,14 +135,14 @@ module MGContacts
 
     ##
     # Immediately updates the element on Google
-    # @param [MGContacts::Element] Element to update
+    # @param [GoogleContacts::Element] Element to update
     #
     # @raise [Net::HTTPError]
-    # @raise [MGContacts::InvalidResponse]
-    # @raise [MGContacts::InvalidRequest]
-    # @raise [MGContacts::InvalidKind]
+    # @raise [GoogleContacts::InvalidResponse]
+    # @raise [GoogleContacts::InvalidRequest]
+    # @raise [GoogleContacts::InvalidKind]
     #
-    # @return [MGContacts::Element] Updated element returned from Google
+    # @return [GoogleContacts::Element] Updated element returned from Google
     def update!(element)
       uri = api_uri["#{element.category}s".to_sym]
       raise InvalidKind, "Unsupported kind #{element.category}" unless uri
@@ -160,14 +160,14 @@ module MGContacts
 
     ##
     # Immediately updates the element on Google
-    # @param [MGContacts::Element] Element to update
+    # @param [GoogleContacts::Element] Element to update
     #
     # @raise [Net::HTTPError]
-    # @raise [MGContacts::InvalidResponse]
-    # @raise [MGContacts::InvalidRequest]
-    # @raise [MGContacts::InvalidKind]
+    # @raise [GoogleContacts::InvalidResponse]
+    # @raise [GoogleContacts::InvalidRequest]
+    # @raise [GoogleContacts::InvalidKind]
     #
-    # @return [MGContacts::Element] Updated element returned from Google
+    # @return [GoogleContacts::Element] Updated element returned from Google
     #def upload_photos!(element)
     #  uri = api_uri[:photos]
     #
@@ -182,10 +182,10 @@ module MGContacts
 
     ##
     # Immediately removes the element on Google
-    # @param [MGContacts::Element] Element to delete
+    # @param [GoogleContacts::Element] Element to delete
     #
     # @raise [Net::HTTPError]
-    # @raise [MGContacts::InvalidRequest]
+    # @raise [GoogleContacts::InvalidRequest]
     #
     def delete!(element)
       uri = api_uri["#{element.category}s".to_sym]
@@ -197,20 +197,20 @@ module MGContacts
     end
 
     ##
-    # Sends an array of {MGContacts::Element} to be updated/created/deleted
+    # Sends an array of {GoogleContacts::Element} to be updated/created/deleted
     # @param [Array] list Array of elements
-    # @param [MGContacts::List] list Array of elements
+    # @param [GoogleContacts::List] list Array of elements
     # @param [Hash] args
     # @option args [Hash, Optional] :params Query string arguments when sending the API request
     # @option args [Hash, Optional] :headers Any additional headers to pass with the API request
     # @option args [Symbol, Optional] :api_type Override which part of the API is called, can either be :contacts or :groups
     #
     # @raise [Net::HTTPError]
-    # @raise [MGContacts::InvalidResponse]
-    # @raise [MGContacts::InvalidRequest]
-    # @raise [MGContacts::InvalidKind]
+    # @raise [GoogleContacts::InvalidResponse]
+    # @raise [GoogleContacts::InvalidRequest]
+    # @raise [GoogleContacts::InvalidKind]
     #
-    # @return [MGContacts::List] List of elements with the results from the server
+    # @return [GoogleContacts::List] List of elements with the results from the server
     def batch!(list, args={})
       return List.new if list.empty?
 

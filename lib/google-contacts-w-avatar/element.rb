@@ -1,4 +1,4 @@
-module MGContacts
+module GoogleContacts
   class Element
     attr_accessor :title, :content, :data, :category, :etag, :group_id
     attr_reader :id, :edit_uri, :modifier_flag, :updated, :batch, :photo_uri
@@ -101,7 +101,7 @@ module MGContacts
     end
 
     ##
-    # Flags the element for creation, must be passed through {MGContacts::Client#batch} for the change to take affect.
+    # Flags the element for creation, must be passed through {GoogleContacts::Client#batch} for the change to take affect.
     def create;
       unless @id
         @modifier_flag = :create
@@ -109,7 +109,7 @@ module MGContacts
     end
 
     ##
-    # Flags the element for deletion, must be passed through {MGContacts::Client#batch} for the change to take affect.
+    # Flags the element for deletion, must be passed through {GoogleContacts::Client#batch} for the change to take affect.
     def delete;
       if @id
         @modifier_flag = :delete
@@ -119,7 +119,7 @@ module MGContacts
     end
 
     ##
-    # Flags the element to be updated, must be passed through {MGContacts::Client#batch} for the change to take affect.
+    # Flags the element to be updated, must be passed through {GoogleContacts::Client#batch} for the change to take affect.
     def update;
       if @id
         @modifier_flag = :update
