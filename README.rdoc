@@ -9,7 +9,7 @@ Based on original gem google-contacts. See https://github.com/Placester/google-c
 
 == Installation
 
-In <b>Rails 3</b>, add this to your Gemfile and run the +bundle+ command.
+In <b>Rails 3</b> or <b>Rails 4</b> , add this to your Gemfile and run the +bundle+ command.
   
   gem 'google-contacts-w-avatar', git: 'https://github.com/nightweb/google-contacts-w-avatar.git'
 
