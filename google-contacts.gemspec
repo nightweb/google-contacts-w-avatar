@@ -25,6 +25,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency "guard-rspec", "~>0.6.0"
 
 
-  s.files        = Dir.glob("lib/**/*") + %w[GPL-LICENSE MIT-LICENSE README.md CHANGELOG.md Rakefile]
+  s.files        = Dir.glob("lib/**/*") + %w[GPL-LICENSE MIT-LICENSE README.rdoc CHANGELOG.md Rakefile]
   s.require_path = "lib"
 end
