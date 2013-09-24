@@ -112,6 +112,8 @@ module GoogleContacts
       end
     end
 
+
+
     ##
     # Immediately creates the element on Google
     #
@@ -121,6 +123,7 @@ module GoogleContacts
     # @raise [GoogleContacts::InvalidKind]
     #
     # @return [GoogleContacts::Element] Updated element returned from Google
+
     def create!(element)
       uri = api_uri["#{element.category}s".to_sym]
       raise InvalidKind, "Unsupported kind #{element.category}" unless uri
