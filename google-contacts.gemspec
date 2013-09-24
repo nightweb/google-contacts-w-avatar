@@ -3,7 +3,7 @@ require "google-contacts-w-avatar/version"
 
 Gem::Specification.new do |s|
   s.name        = "google-contacts-w-avatar"
-  s.version     = MGContacts::VERSION
+  s.version     = GoogleContacts::VERSION
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Zachary Anker", "Maksim Koritskiy"]
   s.email       = ["zach.anker@gmail.com", "max@koritskiy.ru"]

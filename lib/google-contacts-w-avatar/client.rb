@@ -24,7 +24,8 @@ module GoogleContacts
       unless args[:access_token]
         raise ArgumentError, "Access token must be passed"
       end
-
+      @auth_header = args[:auth_header]
+      @gdata_version = args[:gdata_version]
       @options = {:default_type => :contacts}.merge(args)
       set_account = args[:user_email] || 'default'
       @api_uri = {
