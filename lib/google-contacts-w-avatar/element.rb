@@ -1,6 +1,7 @@
+require 'mime/types'
 module GoogleContacts
   class Element
-    attr_accessor :title, :content, :data, :category, :etag, :group_id
+    attr_accessor :title, :content, :data, :category, :etag, :group_id, :photo_content_type, :photo_body, :photo_file_name, :photo_send_delete_request
     attr_reader :id, :edit_uri, :modifier_flag, :updated, :batch, :photo_uri
 
     ##
@@ -66,6 +67,14 @@ module GoogleContacts
           end
         end
       end
+    end
+
+    def photo_body=(body)
+      if @photo_body.present? && body.blank?
+        @photo_send_delete_request = true
+      end
+      @photo_body = body
+
     end
 
     ##
@@ -135,6 +144,31 @@ module GoogleContacts
     end
 
     alias to_s inspect
+
+    def write_photo(file=nil,dirname="#{Rails.root}/tmp/uploaded_photos/")
+      if file.is_a?(File)
+        file.write @photo_body
+      elsif file.is_a?(String) && file.present? && @photo_body.size > 0
+        if File.extname(file).blank?
+          file += ".#{MIME::Types[@photo_content_type].first.extensions.first}"
+        end
+
+        if File.dirname(file) == '.'
+          FileUtils.mkdir_p(dirname) unless File.exists?(dirname)
+          file = "#{dirname}/#{file}".gsub('//','/')
+        end
+        File.open(file,"wb+") do |f|
+          f.write @photo_body
+          f.close
+        end
+        self.photo_file_name = file
+        return file
+      else
+        false
+      end
+    end
+
+
 
     private
     # Evil ahead
@@ -212,5 +246,8 @@ module GoogleContacts
 
       data
     end
+
+
+
   end
 end

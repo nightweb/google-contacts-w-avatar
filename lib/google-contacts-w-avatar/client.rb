@@ -31,7 +31,6 @@ module GoogleContacts
       @api_uri = {
           :contacts => {:all => "https://www.google.com/m8/feeds/contacts/#{set_account}/%s", :create => URI("https://www.google.com/m8/feeds/contacts/#{set_account}/full"), :get => "https://www.google.com/m8/feeds/contacts/#{set_account}/%s/%s", :update => "https://www.google.com/m8/feeds/contacts/#{set_account}/full/%s", :batch => URI("https://www.google.com/m8/feeds/contacts/#{set_account}/full/batch")},
           :groups => {:all => "https://www.google.com/m8/feeds/groups/#{set_account}/%s", :create => URI("https://www.google.com/m8/feeds/groups/#{set_account}/full"), :get => "https://www.google.com/m8/feeds/groups/#{set_account}/%s/%s", :update => "https://www.google.com/m8/feeds/groups/#{set_account}/full/%s", :batch => URI("https://www.google.com/m8/feeds/groups/#{set_account}/full/batch")},
-          :photos => {:get => "https://www.google.com/m8/feeds/photos/media/#{set_account}/%s", :update => "https://www.google.com/m8/feeds/photos/media/#{set_account}'/'%s"}
       }
     end
 
@@ -105,7 +104,9 @@ module GoogleContacts
       response = Nori.parse(http_request(:get, URI(uri[:get] % [args.delete(:type) || :full, id]), args), :nokogiri)
 
       if response and response["entry"]
-        Element.new(response["entry"])
+        el = Element.new(response["entry"])
+        el.photo_file_name = get_photo(el, File.basename(el.id))
+        el
       else
         nil
       end
@@ -154,32 +155,14 @@ module GoogleContacts
       unless data["entry"]
         raise InvalidResponse, "Updated but response wasn't a valid element"
       end
-
-      Element.new(data["entry"])
+      el = Element.new(data["entry"])
+      if el.photo_send_delete_request
+        http_request(:put, URI(uri[:get] % [:base, File.basename(element.id)]), :body => nil, :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag})
+      end
+      #update_photo!(el)
+      el
     end
 
-
-    ##
-    # Immediately updates the element on Google
-    # @param [GoogleContacts::Element] Element to update
-    #
-    # @raise [Net::HTTPError]
-    # @raise [GoogleContacts::InvalidResponse]
-    # @raise [GoogleContacts::InvalidRequest]
-    # @raise [GoogleContacts::InvalidKind]
-    #
-    # @return [GoogleContacts::Element] Updated element returned from Google
-    #def upload_photos!(element)
-    #  uri = api_uri[:photos]
-    #
-    #  xml = "<?xml version='1.0' encoding='UTF-8'?>\n#{element.to_xml}"
-    #  data = Nori.parse(http_request(:put, URI(uri[:get] % [File.basename(element.id)]), :body => xml, :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag}), :nokogiri)
-    #  unless data["entry"]
-    #    raise InvalidResponse, "Updated but response wasn't a valid element"
-    #  end
-    #
-    #  Element.new(data["entry"])
-    #end
 
     ##
     # Immediately removes the element on Google
@@ -229,22 +212,53 @@ module GoogleContacts
       List.new(Nori.parse(results, :nokogiri))
     end
 
-    private
-    def build_query_string(params)
-      return nil unless params
-
-      query_string = ""
-
-      params.each do |k, v|
-        next unless v
-        query_string << "&" unless query_string == ""
-        query_string << "#{k}=#{CGI::escape(v.to_s)}"
-      end
-
-      query_string == "" ? nil : query_string
+    def delete_photo!(element)
+      http_request(:delete, URI(element.photo_uri), :headers => {"Content-Type" => "image/*", "If-Match" => "*"})
     end
 
+    def update_photo!(element, file_name)
+      if File.exists?(file_name) && File.file?(file_name) && MIME::Types.type_for(file_name).first.media_type == 'image'
+        element.photo_content_type = MIME::Types.type_for(file_name).first.simplified
+        File.open(file_name, "r+") do |f|
+          element.photo_body = f.read
+        end
+        http_request(:put, URI(element.photo_uri), :body => element.photo_body, :headers => {"Content-Type" => element.photo_content_type, "If-Match" => "*"})
+      else
+        return false
+      end
+    end
+
+    def get_photo(element, file_name = nil)
+      unless element.is_a?(GoogleContacts::Element)
+        element = get(File.basename(element))
+      end
+      photo_uri = URI(element.photo_uri)
+
+      begin
+        http_request_blk(:get, photo_uri, {}) do |content_type, body|
+          element.photo_content_type = content_type
+          element.photo_body = body
+        end
+        unless file_name.nil?
+          file_name = Digest::MD5.hexdigest("#{Time.now.to_s}-#{rand(1000000)}") if file_name.empty?
+          element.write_photo(file_name)
+        end
+      rescue InvalidRequest
+        false
+      end
+    end
+
+
+
     def http_request(method, uri, args)
+      http_request_blk(method, uri, args) do |content_type, body|
+        body
+      end
+    end
+
+
+    private
+    def http_request_blk(method, uri, args, &block)
       headers = args[:headers] || {}
       headers["Authorization"] = @auth_header || "Bearer #{@options[:access_token]}"
       headers["GData-Version"] = @gdata_version || "3.0"
@@ -267,13 +281,13 @@ module GoogleContacts
       # GET
       if method == :get
         response = http.request_get(request_uri, headers)
-      # POST
+        # POST
       elsif method == :post
         response = http.request_post(request_uri, args.delete(:body), headers)
-      # PUT
+        # PUT
       elsif method == :put
         response = http.request_put(request_uri, args.delete(:body), headers)
-      # DELETE
+        # DELETE
       elsif method == :delete
         response = http.request(Net::HTTP::Delete.new(request_uri, headers))
       else
@@ -287,9 +301,27 @@ module GoogleContacts
       elsif response.code != "200" and response.code != "201"
         raise Net::HTTPError.new("#{response.message} (#{response.code})", response)
       end
-
+      yield response.content_type, response.body
       response.body
     end
+
+
+    private
+    def build_query_string(params)
+      return nil unless params
+
+      query_string = ""
+
+      params.each do |k, v|
+        next unless v
+        query_string << "&" unless query_string == ""
+        query_string << "#{k}=#{CGI::escape(v.to_s)}"
+      end
+
+      query_string == "" ? nil : query_string
+    end
+
+
 
     private
       def api_uri

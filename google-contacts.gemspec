@@ -15,8 +15,9 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency "nokogiri", "~>1.6.0"
   s.add_runtime_dependency "nori", "~>1.1.0"
-  s.add_runtime_dependency 'gdata', git: 'https://github.com/agentrock/gdata.git'
+  s.add_runtime_dependency 'gdata'
   s.add_runtime_dependency 'google-api-client', '~> 0.6.4'
+  s.add_runtime_dependency 'mime-types', '~> 1.25'
 
   s.add_runtime_dependency "jruby-openssl", "~>0.7.0" if RUBY_PLATFORM == "java"
 
