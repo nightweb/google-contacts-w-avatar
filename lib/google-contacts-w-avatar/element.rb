@@ -74,7 +74,6 @@ module GoogleContacts
         @photo_send_delete_request = true
       end
       @photo_body = body
-
     end
 
     ##
