@@ -9,7 +9,6 @@ module MGContacts
 
     attr_accessor :auth_header
     attr_accessor :gdata_version
-    ETAGS = {:avatars => '"KTlcZWs1bCp7ImBBPV43VUV4LXEZCXERZAc."'}
     ##
     # Initializes a new client
     # @param [Hash] args
@@ -31,7 +30,7 @@ module MGContacts
       @api_uri = {
           :contacts => {:all => "https://www.google.com/m8/feeds/contacts/#{set_account}/%s", :create => URI("https://www.google.com/m8/feeds/contacts/#{set_account}/full"), :get => "https://www.google.com/m8/feeds/contacts/#{set_account}/%s/%s", :update => "https://www.google.com/m8/feeds/contacts/#{set_account}/full/%s", :batch => URI("https://www.google.com/m8/feeds/contacts/#{set_account}/full/batch")},
           :groups => {:all => "https://www.google.com/m8/feeds/groups/#{set_account}/%s", :create => URI("https://www.google.com/m8/feeds/groups/#{set_account}/full"), :get => "https://www.google.com/m8/feeds/groups/#{set_account}/%s/%s", :update => "https://www.google.com/m8/feeds/groups/#{set_account}/full/%s", :batch => URI("https://www.google.com/m8/feeds/groups/#{set_account}/full/batch")},
-          :avatars => {:get => "https://www.google.com/m8/feeds/photos/media/#{set_account}/%s", :update => "https://www.google.com/m8/feeds/photos/media/#{set_account}'/'%s"}
+          :photos => {:get => "https://www.google.com/m8/feeds/photos/media/#{set_account}/%s", :update => "https://www.google.com/m8/feeds/photos/media/#{set_account}'/'%s"}
       }
     end
 
@@ -169,8 +168,8 @@ module MGContacts
     # @raise [MGContacts::InvalidKind]
     #
     # @return [MGContacts::Element] Updated element returned from Google
-    #def upload_avatar!(element)
-    #  uri = api_uri[:avatars]
+    #def upload_photos!(element)
+    #  uri = api_uri[:photos]
     #
     #  xml = "<?xml version='1.0' encoding='UTF-8'?>\n#{element.to_xml}"
     #  data = Nori.parse(http_request(:put, URI(uri[:get] % [File.basename(element.id)]), :body => xml, :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag}), :nokogiri)
