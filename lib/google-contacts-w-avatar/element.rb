@@ -1,7 +1,7 @@
 module MGContacts
   class Element
     attr_accessor :title, :content, :data, :category, :etag, :group_id
-    attr_reader :id, :edit_uri, :modifier_flag, :updated, :batch
+    attr_reader :id, :edit_uri, :modifier_flag, :updated, :batch, :photo_uri
 
     ##
     # Creates a new element by parsing the returned entry from Google
@@ -60,7 +60,9 @@ module MGContacts
         entry["link"].each do |link|
           if link["@rel"] == "edit"
             @edit_uri = URI(link["@href"])
-            break
+            #break
+          elsif link["@rel"] =~ /\/rel\#photo/
+            @photo_uri = URI(link["@href"])
           end
         end
       end

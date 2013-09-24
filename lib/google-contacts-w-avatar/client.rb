@@ -9,7 +9,7 @@ module MGContacts
 
     attr_accessor :auth_header
     attr_accessor :gdata_version
-
+    ETAGS = {:avatars => '"KTlcZWs1bCp7ImBBPV43VUV4LXEZCXERZAc."'}
     ##
     # Initializes a new client
     # @param [Hash] args
@@ -31,7 +31,7 @@ module MGContacts
       @api_uri = {
           :contacts => {:all => "https://www.google.com/m8/feeds/contacts/#{set_account}/%s", :create => URI("https://www.google.com/m8/feeds/contacts/#{set_account}/full"), :get => "https://www.google.com/m8/feeds/contacts/#{set_account}/%s/%s", :update => "https://www.google.com/m8/feeds/contacts/#{set_account}/full/%s", :batch => URI("https://www.google.com/m8/feeds/contacts/#{set_account}/full/batch")},
           :groups => {:all => "https://www.google.com/m8/feeds/groups/#{set_account}/%s", :create => URI("https://www.google.com/m8/feeds/groups/#{set_account}/full"), :get => "https://www.google.com/m8/feeds/groups/#{set_account}/%s/%s", :update => "https://www.google.com/m8/feeds/groups/#{set_account}/full/%s", :batch => URI("https://www.google.com/m8/feeds/groups/#{set_account}/full/batch")},
-          :avatar => {:get => "https://www.google.com/m8/feeds/photos/media/#{set_account}/%s/%s", :update => "https://www.google.com/m8/feeds/photos/media/#{set_account}/full/%s"}
+          :avatars => {:get => "https://www.google.com/m8/feeds/photos/media/#{set_account}/%s", :update => "https://www.google.com/m8/feeds/photos/media/#{set_account}'/'%s"}
       }
     end
 
@@ -46,9 +46,8 @@ module MGContacts
     #
     # @return [MGContacts::List] List containing all the returned entries
     def all(args={})
-      uri = API_URI[args.delete(:api_type) || @options[:default_type]]
+      uri = api_uri[args.delete(:api_type) || @options[:default_type]]
       raise ArgumentError, "Unsupported type given" unless uri
-
       response = http_request(:get, URI(uri[:all] % (args.delete(:type) || :full)), args)
       List.new(Nori.parse(response, :nokogiri))
     end
@@ -65,7 +64,7 @@ module MGContacts
     #
     # @return [MGContacts::List] List containing all the returned entries
     def paginate_all(args={})
-      uri = API_URI[args.delete(:api_type) || @options[:default_type]]
+      uri = api_uri[args.delete(:api_type) || @options[:default_type]]
       raise ArgumentError, "Unsupported type given" unless uri
       uri = URI(uri[:all] % (args.delete(:type) || :full))
 
@@ -100,7 +99,7 @@ module MGContacts
     #
     # @return [MGContacts::Element] Single entry found on
     def get(id, args={})
-      uri = API_URI[args.delete(:api_type) || @options[:default_type]]
+      uri = api_uri[args.delete(:api_type) || @options[:default_type]]
       raise ArgumentError, "Unsupported type given" unless uri
 
       response = Nori.parse(http_request(:get, URI(uri[:get] % [args.delete(:type) || :full, id]), args), :nokogiri)
@@ -122,7 +121,7 @@ module MGContacts
     #
     # @return [MGContacts::Element] Updated element returned from Google
     def create!(element)
-      uri = API_URI["#{element.category}s".to_sym]
+      uri = api_uri["#{element.category}s".to_sym]
       raise InvalidKind, "Unsupported kind #{element.category}" unless uri
 
       xml = "<?xml version='1.0' encoding='UTF-8'?>\n#{element.to_xml}"
@@ -146,7 +145,7 @@ module MGContacts
     #
     # @return [MGContacts::Element] Updated element returned from Google
     def update!(element)
-      uri = API_URI["#{element.category}s".to_sym]
+      uri = api_uri["#{element.category}s".to_sym]
       raise InvalidKind, "Unsupported kind #{element.category}" unless uri
 
       xml = "<?xml version='1.0' encoding='UTF-8'?>\n#{element.to_xml}"
@@ -159,6 +158,29 @@ module MGContacts
       Element.new(data["entry"])
     end
 
+
+    ##
+    # Immediately updates the element on Google
+    # @param [MGContacts::Element] Element to update
+    #
+    # @raise [Net::HTTPError]
+    # @raise [MGContacts::InvalidResponse]
+    # @raise [MGContacts::InvalidRequest]
+    # @raise [MGContacts::InvalidKind]
+    #
+    # @return [MGContacts::Element] Updated element returned from Google
+    #def upload_avatar!(element)
+    #  uri = api_uri[:avatars]
+    #
+    #  xml = "<?xml version='1.0' encoding='UTF-8'?>\n#{element.to_xml}"
+    #  data = Nori.parse(http_request(:put, URI(uri[:get] % [File.basename(element.id)]), :body => xml, :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag}), :nokogiri)
+    #  unless data["entry"]
+    #    raise InvalidResponse, "Updated but response wasn't a valid element"
+    #  end
+    #
+    #  Element.new(data["entry"])
+    #end
+
     ##
     # Immediately removes the element on Google
     # @param [MGContacts::Element] Element to delete
@@ -167,7 +189,7 @@ module MGContacts
     # @raise [MGContacts::InvalidRequest]
     #
     def delete!(element)
-      uri = API_URI["#{element.category}s".to_sym]
+      uri = api_uri["#{element.category}s".to_sym]
       raise InvalidKind, "Unsupported kind #{element.category}" unless uri
 
       http_request(:delete, URI(uri[:get] % [:base, File.basename(element.id)]), :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag})
@@ -193,7 +215,7 @@ module MGContacts
     def batch!(list, args={})
       return List.new if list.empty?
 
-      uri = API_URI[args.delete(:api_type) || @options[:default_type]]
+      uri = api_uri[args.delete(:api_type) || @options[:default_type]]
       raise ArgumentError, "Unsupported type given" unless uri
 
       xml = "<?xml version='1.0' encoding='UTF-8'?>\n"
@@ -268,5 +290,10 @@ module MGContacts
 
       response.body
     end
+
+    private
+      def api_uri
+        @api_uri || {}
+      end
   end
 end
