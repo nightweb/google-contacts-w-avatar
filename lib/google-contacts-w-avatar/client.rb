@@ -106,7 +106,7 @@ module GoogleContacts
     def get(id, args={})
       uri = api_uri[args.delete(:api_type) || @options[:default_type]]
       raise ArgumentError, "Unsupported type given" unless uri
-
+      puts uri
       begin
         response = Nori.parse(http_request(:get, URI(uri[:get] % [args.delete(:type) || :full, id]), args), :nokogiri)
       rescue RecordNotFound
@@ -264,19 +264,21 @@ module GoogleContacts
       unless element.is_a?(GoogleContacts::Element)
         element = get(File.basename(element))
       end
-      photo_uri = URI(element.photo_uri)
 
-      begin
-        http_request_blk(:get, photo_uri, {}) do |content_type, body|
-          element.photo_content_type = content_type
-          element.photo_body = body
+      if element.photo_uri.present?
+      photo_uri = URI(element.photo_uri)
+        begin
+          http_request_blk(:get, photo_uri, {}) do |content_type, body|
+            element.photo_content_type = content_type
+            element.photo_body = body
+          end
+          unless file_name.nil?
+            file_name = Digest::MD5.hexdigest("#{Time.now.to_s}-#{rand(1000000)}") if file_name.empty?
+            element.write_photo(file_name)
+          end
+        rescue RecordNotFound
+          false
         end
-        unless file_name.nil?
-          file_name = Digest::MD5.hexdigest("#{Time.now.to_s}-#{rand(1000000)}") if file_name.empty?
-          element.write_photo(file_name)
-        end
-      rescue RecordNotFound
-        false
       end
     end
 
