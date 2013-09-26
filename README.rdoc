@@ -17,7 +17,7 @@ In <b>Rails 3</b> or <b>Rails 4</b> , add this to your Gemfile and run the +bund
 
 authorize:
   
-  gc = GoogleContacts::Auth::UserLogin.new(google_email,some_password).google_contacts
+  gc = GoogleContacts::Auth::UserLogin.new(google_email,some_password, reconnect: true).google_contacts
 
 fetch all elements:
 
