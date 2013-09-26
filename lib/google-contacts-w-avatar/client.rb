@@ -9,6 +9,8 @@ module GoogleContacts
 
     attr_accessor :auth_header
     attr_accessor :gdata_version
+    attr_accessor :client
+    attr_accessor :reconnect
     ##
     # Initializes a new client
     # @param [Hash] args
@@ -24,6 +26,8 @@ module GoogleContacts
       unless args[:access_token]
         raise ArgumentError, "Access token must be passed"
       end
+      @reconnect = args[:reconnect]
+      @client = args[:client]
       @auth_header = args[:auth_header]
       @gdata_version = args[:gdata_version]
       @options = {:default_type => :contacts}.merge(args)
@@ -300,7 +304,11 @@ module GoogleContacts
       if response.code == "400" or response.code == "412" or response.code == "404"
         raise InvalidRequest.new("#{response.body} (HTTP #{response.code})")
       elsif response.code == "401"
-        raise Unauthorized.new(response.message)
+        if self.client && self.reconnect
+          self.client.try(:auth)
+        else
+          raise Unauthorized.new(response.message)
+        end
       elsif response.code != "200" and response.code != "201"
         raise Net::HTTPError.new("#{response.message} (#{response.code})", response)
       end
