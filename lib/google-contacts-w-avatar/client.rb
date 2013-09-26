@@ -265,7 +265,7 @@ module GoogleContacts
       end
 
       if element.photo_uri.present?
-      photo_uri = URI(element.photo_uri)
+      #photo_uri = URI(element.photo_uri)
         begin
           http_request_blk(:get, photo_uri, {}) do |content_type, body|
             element.photo_content_type = content_type
