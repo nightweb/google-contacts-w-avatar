@@ -106,7 +106,6 @@ module GoogleContacts
     def get(id, args={})
       uri = api_uri[args.delete(:api_type) || @options[:default_type]]
       raise ArgumentError, "Unsupported type given" unless uri
-      puts uri
       begin
         response = Nori.parse(http_request(:get, URI(uri[:get] % [args.delete(:type) || :full, id]), args), :nokogiri)
       rescue RecordNotFound
