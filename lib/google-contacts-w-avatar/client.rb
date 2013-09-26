@@ -11,6 +11,7 @@ module GoogleContacts
     attr_accessor :gdata_version
     attr_accessor :client
     attr_accessor :reconnect
+    attr_accessor :raise_not_found
     ##
     # Initializes a new client
     # @param [Hash] args
@@ -105,7 +106,11 @@ module GoogleContacts
       uri = api_uri[args.delete(:api_type) || @options[:default_type]]
       raise ArgumentError, "Unsupported type given" unless uri
 
-      response = Nori.parse(http_request(:get, URI(uri[:get] % [args.delete(:type) || :full, id]), args), :nokogiri)
+      begin
+        response = Nori.parse(http_request(:get, URI(uri[:get] % [args.delete(:type) || :full, id]), args), :nokogiri)
+      rescue RecordNotFound
+        raise RecordNotFound unless self.raise_not_found === false
+      end
 
       if response and response["entry"]
         el = Element.new(response["entry"])
@@ -158,16 +163,21 @@ module GoogleContacts
 
       xml = "<?xml version='1.0' encoding='UTF-8'?>\n#{element.to_xml}"
 
-      data = Nori.parse(http_request(:put, URI(uri[:get] % [:base, File.basename(element.id)]), :body => xml, :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag}), :nokogiri)
-      unless data["entry"]
-        raise InvalidResponse, "Updated but response wasn't a valid element"
+      begin
+        data = Nori.parse(http_request(:put, URI(uri[:get] % [:base, File.basename(element.id)]), :body => xml, :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag}), :nokogiri)
+        unless data["entry"]
+          raise InvalidResponse, "Updated but response wasn't a valid element"
+        end
+        el = Element.new(data["entry"])
+        if el.photo_send_delete_request
+          http_request(:put, URI(uri[:get] % [:base, File.basename(element.id)]), :body => nil, :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag})
+        end
+        #update_photo!(el)
+        el
+      rescue RecordNotFound
+        raise RecordNotFound unless self.raise_not_found === false
+        nil
       end
-      el = Element.new(data["entry"])
-      if el.photo_send_delete_request
-        http_request(:put, URI(uri[:get] % [:base, File.basename(element.id)]), :body => nil, :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag})
-      end
-      #update_photo!(el)
-      el
     end
 
 
@@ -181,10 +191,13 @@ module GoogleContacts
     def delete!(element)
       uri = api_uri["#{element.category}s".to_sym]
       raise InvalidKind, "Unsupported kind #{element.category}" unless uri
-
+      begin
       http_request(:delete, URI(uri[:get] % [:base, File.basename(element.id)]), :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag})
+      rescue RecordNotFound
+        raise RecordNotFound unless self.raise_not_found === false
+        nil
+      end
 
-      true
     end
 
     ##
@@ -220,7 +233,13 @@ module GoogleContacts
     end
 
     def delete_photo!(element)
-      http_request(:delete, URI(element.photo_uri), :headers => {"Content-Type" => "image/*", "If-Match" => "*"})
+      begin
+        http_request(:delete, URI(element.photo_uri), :headers => {"Content-Type" => "image/*", "If-Match" => "*"})
+        true
+      rescue RecordNotFound
+        raise RecordNotFound unless self.raise_not_found === false
+        nil
+      end
     end
 
     def update_photo!(element, file_name)
@@ -229,7 +248,12 @@ module GoogleContacts
         File.open(file_name, "r+") do |f|
           element.photo_body = f.read
         end
-        http_request(:put, URI(element.photo_uri), :body => element.photo_body, :headers => {"Content-Type" => element.photo_content_type, "If-Match" => "*"})
+        begin
+          http_request(:put, URI(element.photo_uri), :body => element.photo_body, :headers => {"Content-Type" => element.photo_content_type, "If-Match" => "*"})
+        rescue RecordNotFound
+          raise RecordNotFound unless self.raise_not_found === false
+          nil
+        end
       else
         return false
       end
@@ -250,7 +274,7 @@ module GoogleContacts
           file_name = Digest::MD5.hexdigest("#{Time.now.to_s}-#{rand(1000000)}") if file_name.empty?
           element.write_photo(file_name)
         end
-      rescue InvalidRequest
+      rescue RecordNotFound
         false
       end
     end
@@ -301,8 +325,10 @@ module GoogleContacts
         raise ArgumentError, "Invalid method #{method}"
       end
 
-      if response.code == "400" or response.code == "412" or response.code == "404"
+      if response.code == "400" or response.code == "412"
         raise InvalidRequest.new("#{response.body} (HTTP #{response.code})")
+      elsif response.code == "404"
+        raise RecordNotFound.new("#{response.body} (HTTP #{response.code})")
       elsif response.code == "401"
         if self.client && self.reconnect
           self.client.try(:auth)
