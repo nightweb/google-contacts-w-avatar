@@ -37,6 +37,7 @@ module GoogleContacts
           :contacts => {:all => "https://www.google.com/m8/feeds/contacts/#{set_account}/%s", :create => URI("https://www.google.com/m8/feeds/contacts/#{set_account}/full"), :get => "https://www.google.com/m8/feeds/contacts/#{set_account}/%s/%s", :update => "https://www.google.com/m8/feeds/contacts/#{set_account}/full/%s", :batch => URI("https://www.google.com/m8/feeds/contacts/#{set_account}/full/batch")},
           :groups => {:all => "https://www.google.com/m8/feeds/groups/#{set_account}/%s", :create => URI("https://www.google.com/m8/feeds/groups/#{set_account}/full"), :get => "https://www.google.com/m8/feeds/groups/#{set_account}/%s/%s", :update => "https://www.google.com/m8/feeds/groups/#{set_account}/full/%s", :batch => URI("https://www.google.com/m8/feeds/groups/#{set_account}/full/batch")},
       }
+      @raise_not_found = false
     end
 
     ##
@@ -109,7 +110,7 @@ module GoogleContacts
       begin
         response = Nori.parse(http_request(:get, URI(uri[:get] % [args.delete(:type) || :full, id]), args), :nokogiri)
       rescue RecordNotFound
-        raise RecordNotFound unless self.raise_not_found === false
+        raise RecordNotFound unless @raise_not_found === false
       end
 
       if response and response["entry"]
@@ -175,7 +176,7 @@ module GoogleContacts
         #update_photo!(el)
         el
       rescue RecordNotFound
-        raise RecordNotFound unless self.raise_not_found === false
+        raise RecordNotFound unless @raise_not_found === false
         nil
       end
     end
@@ -194,7 +195,7 @@ module GoogleContacts
       begin
       http_request(:delete, URI(uri[:get] % [:base, File.basename(element.id)]), :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag})
       rescue RecordNotFound
-        raise RecordNotFound unless self.raise_not_found === false
+        raise RecordNotFound unless @raise_not_found === false
         nil
       end
 
@@ -237,7 +238,7 @@ module GoogleContacts
         http_request(:delete, URI(element.photo_uri), :headers => {"Content-Type" => "image/*", "If-Match" => "*"})
         true
       rescue RecordNotFound
-        raise RecordNotFound unless self.raise_not_found === false
+        raise RecordNotFound unless @raise_not_found === false
         nil
       end
     end
@@ -251,7 +252,7 @@ module GoogleContacts
         begin
           http_request(:put, URI(element.photo_uri), :body => element.photo_body, :headers => {"Content-Type" => element.photo_content_type, "If-Match" => "*"})
         rescue RecordNotFound
-          raise RecordNotFound unless self.raise_not_found === false
+          raise RecordNotFound unless @raise_not_found === false
           nil
         end
       else
