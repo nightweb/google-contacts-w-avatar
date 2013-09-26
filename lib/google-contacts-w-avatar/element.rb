@@ -1,8 +1,8 @@
 require 'mime/types'
 module GoogleContacts
   class Element
-    attr_accessor :title, :content, :data, :category, :etag, :group_id, :photo_content_type, :photo_body, :photo_file_name, :photo_send_delete_request
-    attr_reader :id, :edit_uri, :modifier_flag, :updated, :batch, :photo_uri
+    attr_accessor :title, :content, :data, :category, :etag, :group_id, :photo_content_type, :photo_body, :photo_file_name, :photo_send_delete_request, :photo_uri, :groups_ids, :xml_response, :xml_text
+    attr_reader :id, :edit_uri, :modifier_flag, :updated, :batch
 
     ##
     # Creates a new element by parsing the returned entry from Google
@@ -52,8 +52,15 @@ module GoogleContacts
       end
 
       if entry["gContact:groupMembershipInfo"].is_a?(Hash)
-        @modifier_flag = :delete if entry["gContact:groupMembershipInfo"]["@deleted"] == "true"
+        #@modifier_flag = :delete if entry["gContact:groupMembershipInfo"]["@deleted"] == "true"
         @group_id = entry["gContact:groupMembershipInfo"]["@href"]
+        @group_ids = [@group_id]
+      elsif entry["gContact:groupMembershipInfo"].is_a?(Array)
+        @group_ids = []
+        entry["gContact:groupMembershipInfo"].each do |group|
+          @group_ids << group["@href"]
+          @modifier_flag = :delete if group["@deleted"] == "true"
+        end
       end
 
       # Need to know where to send the update request
@@ -79,7 +86,7 @@ module GoogleContacts
     ##
     # Converts the entry into XML to be sent to Google
     def to_xml(batch=false)
-      xml = "<atom:entry xmlns:atom='http://www.w3.org/2005/Atom' xmlns:gd='http://schemas.google.com/g/2005'"
+      xml = "<atom:entry xmlns:atom='http://www.w3.org/2005/Atom' xmlns:gContact='http://schemas.google.com/contact/2008' xmlns:batch='http://schemas.google.com/gdata/batch' xmlns:gd='http://schemas.google.com/g/2005'"
       xml << " gd:etag='#{@etag}'" if @etag
       xml << ">\n"
 
@@ -98,7 +105,14 @@ module GoogleContacts
         xml << "  <updated>#{Time.now.utc.iso8601}</updated>\n"
         xml << "  <atom:content type='text'>#{@content}</atom:content>\n"
         xml << "  <atom:title>#{@title}</atom:title>\n"
-        xml << "  <gContact:groupMembershipInfo deleted='false' href='#{@group_id}'/>\n" if @group_id
+        if @group_ids.present? && @group_ids.is_a?(Array) && @group_ids.count > 1
+          @group_ids.each do |group_id|
+            xml << "  <gContact:groupMembershipInfo deleted='false' href='#{group_id}'/>\n"
+          end
+        elsif @group_id
+          xml << "  <gContact:groupMembershipInfo deleted='false' href='#{@group_id}'/>\n"
+        end
+
 
         @data.each do |key, parsed|
           xml << handle_data(key, parsed, 2)

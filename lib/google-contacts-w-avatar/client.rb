@@ -107,13 +107,16 @@ module GoogleContacts
       uri = api_uri[args.delete(:api_type) || @options[:default_type]]
       raise ArgumentError, "Unsupported type given" unless uri
       begin
-        response = Nori.parse(http_request(:get, URI(uri[:get] % [args.delete(:type) || :full, id]), args), :nokogiri)
+        xml_text = http_request(:get, URI(uri[:get] % [args.delete(:type) || :full, id]), args)
+        response = Nori.parse(xml_text, :nokogiri)
       rescue RecordNotFound
         raise RecordNotFound unless @raise_not_found === false
       end
 
       if response and response["entry"]
         el = Element.new(response["entry"])
+        el.xml_text = xml_text
+        el.xml_response = response
         el.photo_file_name = get_photo(el, File.basename(el.id))
         el
       else
