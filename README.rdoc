@@ -19,17 +19,25 @@ authorize:
   
   gc = GoogleContacts::Auth::UserLogin.new(google_email,some_password, reconnect: true).google_contacts
 
-fetch all elements:
+    OR
+
+  client = GoogleContacts::Auth::UserLogin.new(google_email,some_password, reconnect: true, google_contacts: false)
+  ...
+  some code
+  ...
+  gc = GoogleContacts::Client.new(:client => client)
+
+And then fetch all elements:
 
   el = gc.all
 
 Warnining! By default not load contact photo. your must get element by id or use gc.get_photo(el) for upload image
 
-fetch element by id:
+Or fetch element by id:
 
   el = gc.get(id)
 
-update photo:
+Or/and update some photo:
 
   el = gc.update_photo!(el, path_to_your_photo)
 
