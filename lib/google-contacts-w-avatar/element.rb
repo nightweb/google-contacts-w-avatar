@@ -1,7 +1,7 @@
 require 'mime/types'
 module GoogleContacts
   class Element
-    attr_accessor :title, :content, :data, :category, :etag, :group_id, :photo_content_type, :photo_body, :photo_file_name, :photo_send_delete_request, :photo_uri, :groups_ids, :xml_response, :xml_text
+    attr_accessor :title, :content, :data, :category, :etag, :group_id, :photo_content_type, :photo_body, :photo_file_name, :photo_send_delete_request, :photo_uri, :group_ids, :xml_response, :xml_text
     attr_reader :id, :edit_uri, :modifier_flag, :updated, :batch
 
     ##
