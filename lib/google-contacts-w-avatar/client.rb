@@ -278,6 +278,7 @@ module GoogleContacts
             file_name = Digest::MD5.hexdigest("#{Time.now.to_s}-#{rand(1000000)}") if file_name.empty?
             element.write_photo(file_name)
           end
+          element.photo_body
         rescue RecordNotFound
           false
         end
