@@ -76,6 +76,35 @@ module GoogleContacts
       end
     end
 
+    def add_email(email, type=:home, options)
+      primary = options[:primary]
+      check_type(type, [:home, :work])
+      self.data["gd:email"] ||= []
+      item = {"@rel"=>"http://schemas.google.com/g/2005##{type}", "@address"=>email}
+      item.merge!("@primary"=>"true") if primary
+      self.data["gd:email"] << item
+    end
+
+    def add_phone(phone, type = :mobile, options)
+      primary = options[:primary]
+      check_type(type, [:home, :work, :mobile])
+      self.data["gd:phoneNumber"] ||= []
+      item = {"@rel"=>"http://schemas.google.com/g/2005##{type}", "text"=>phone}
+      item.merge!("@primary"=>"true") if primary
+      self.data["gd:phoneNumber"] << item
+    end
+
+    def add_im(im, type, options)
+      primary = options[:primary]
+      check_type(type, [:icq, :skype, :google_talk])
+      type = type.to_s.capitalize
+      self.data["gd:im"] ||= []
+      item = {"@protocol"=>"http://schemas.google.com/g/2005##{type}", "@rel"=>"http://schemas.google.com/g/2005#other","@address"=>im}
+      item.merge!("@primary"=>"true") if primary
+      self.data["gd:im"] << item
+    end
+
+
     def photo_body=(body)
       if @photo_body.present? && body.blank?
         @photo_send_delete_request = true
@@ -260,6 +289,9 @@ module GoogleContacts
       data
     end
 
+    def check_type(type, types)
+      raise ArgumentError, "Invalid type #{type}. Type must be :#{types.split(', ')}" unless types.include?(type)
+    end
 
 
   end
