@@ -95,7 +95,7 @@ module GoogleContacts
 
     def add_im(im, type, options={})
       check_type(type, [:icq, :skype, :google_talk])
-      type = type.to_s.capitalize
+      type = type.to_s.upcase
       self.data["gd:im"] ||= []
       item = {"@protocol"=>"http://schemas.google.com/g/2005##{type}", "@rel"=>"http://schemas.google.com/g/2005#other","@address"=>im}
       item.merge!("@primary"=>"true") if options[:primary]
