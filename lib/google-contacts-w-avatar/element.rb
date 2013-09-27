@@ -132,7 +132,7 @@ module GoogleContacts
         xml << "  <updated>#{Time.now.utc.iso8601}</updated>\n"
         xml << "  <atom:content type='text'>#{@content}</atom:content>\n"
         xml << "  <atom:title>#{@title}</atom:title>\n"
-        if @group_ids.present? && @group_ids.is_a?(Array) && @group_ids.count > 1
+        if @group_ids.present? && @group_ids.is_a?(Array) && @group_ids.count > 0
           @group_ids.each do |group_id|
             xml << "  <gContact:groupMembershipInfo deleted='false' href='#{group_id}'/>\n"
           end
