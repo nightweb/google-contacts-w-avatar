@@ -76,7 +76,7 @@ module GoogleContacts
       end
     end
 
-    def add_email(email, type=:home, options)
+    def add_email(email, type=:home, options={})
       primary = options[:primary]
       check_type(type, [:home, :work])
       self.data["gd:email"] ||= []
@@ -85,7 +85,7 @@ module GoogleContacts
       self.data["gd:email"] << item
     end
 
-    def add_phone(phone, type = :mobile, options)
+    def add_phone(phone, type = :mobile, options={})
       primary = options[:primary]
       check_type(type, [:home, :work, :mobile])
       self.data["gd:phoneNumber"] ||= []
@@ -94,7 +94,7 @@ module GoogleContacts
       self.data["gd:phoneNumber"] << item
     end
 
-    def add_im(im, type, options)
+    def add_im(im, type, options={})
       primary = options[:primary]
       check_type(type, [:icq, :skype, :google_talk])
       type = type.to_s.capitalize
