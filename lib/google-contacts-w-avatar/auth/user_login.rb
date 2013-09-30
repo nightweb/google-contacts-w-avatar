@@ -39,7 +39,7 @@ module GoogleContacts
       private
         def init_google_contacts!(args={})
           args = @init_args.merge(args)
-          @google_contacts = GoogleContacts::Client.new(access_token: @token, user_email: init_args[:email] || @email, auth_header: "GoogleLogin auth=#{@token}", gdata_version: '2.0', reconnect: args[:reconnect] || @reconnect )
+          @google_contacts = GoogleContacts::Client.new(access_token: @token, user_email: init_args[:email] || @email, auth_header: "GoogleLogin auth=#{@token}", gdata_version: '3.0', reconnect: args[:reconnect] || @reconnect )
         end
 
     end
