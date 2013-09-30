@@ -104,7 +104,7 @@ module GoogleContacts
 
 
     def photo_body=(body)
-      if @photo_body.present? && body.blank?
+      if @photo_body.present? && (body.nil? || body == '')
         @photo_send_delete_request = true
       end
       @photo_body = body
