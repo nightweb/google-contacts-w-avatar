@@ -136,13 +136,13 @@ module GoogleContacts
     #
     # @return [GoogleContacts::Element] Updated element returned from Google
 
-    def create!(element)
+    def create!(element,url=nil, method=:post)
       uri = api_uri["#{element.category}s".to_sym]
       raise InvalidKind, "Unsupported kind #{element.category}" unless uri
 
       xml = "<?xml version='1.0' encoding='UTF-8'?>\n#{element.to_xml}"
 
-      data = Nori.parse(http_request(:post, uri[:create], :body => xml, :headers => {"Content-Type" => "application/atom+xml"}), :nokogiri)
+      data = Nori.parse(http_request(method, url || uri[:create], :body => xml, :headers => {"Content-Type" => "application/atom+xml"}), :nokogiri)
       unless data["entry"]
         raise InvalidResponse, "Created but response wasn't a valid element"
       end
@@ -160,27 +160,27 @@ module GoogleContacts
     # @raise [GoogleContacts::InvalidKind]
     #
     # @return [GoogleContacts::Element] Updated element returned from Google
-    def update!(element)
+    def update!(element,url=nil, method=:put)
       uri = api_uri["#{element.category}s".to_sym]
       raise InvalidKind, "Unsupported kind #{element.category}" unless uri
 
       xml = "<?xml version='1.0' encoding='UTF-8'?>\n#{element.to_xml}"
 
-      begin
-        data = Nori.parse(http_request(:put, URI(uri[:update] % [:base, File.basename(element.id)]), :body => xml, :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag}), :nokogiri)
+      #begin
+        data = Nori.parse(http_request(method, url || URI(uri[:update] % [:full, File.basename(element.id)]), :body => xml, :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag}), :nokogiri)
         unless data["entry"]
           raise InvalidResponse, "Updated but response wasn't a valid element"
         end
         el = Element.new(data["entry"])
         if el.photo_send_delete_request
-          http_request(:put, URI(uri[:get] % [:base, File.basename(element.id)]), :body => nil, :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag})
+          http_request(:put, URI(api_uri[:photos][:get] % [:base, File.basename(element.id)]), :body => nil, :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag})
         end
         #update_photo!(el)
         el
-      rescue RecordNotFound
-        raise RecordNotFound unless @raise_not_found === false
-        nil
-      end
+      #rescue RecordNotFound
+      #  raise RecordNotFound unless @raise_not_found === false
+      #  nil
+      #end
     end
 
 
@@ -191,11 +191,11 @@ module GoogleContacts
     # @raise [Net::HTTPError]
     # @raise [GoogleContacts::InvalidRequest]
     #
-    def delete!(element)
+    def delete!(element,url=nil, method=:delete)
       uri = api_uri["#{element.category}s".to_sym]
       raise InvalidKind, "Unsupported kind #{element.category}" unless uri
       begin
-      http_request(:delete, URI(uri[:get] % [:base, File.basename(element.id)]), :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag})
+      http_request(method, url || URI(uri[:get] % [:base, File.basename(element.id)]), :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag})
       rescue RecordNotFound
         raise RecordNotFound unless @raise_not_found === false
         nil
