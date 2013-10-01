@@ -1,7 +1,7 @@
 require 'mime/types'
 module GoogleContacts
   class Element
-    attr_accessor :title, :content, :data, :category, :etag, :group_id, :photo_content_type, :photo_body, :photo_file_name, :photo_send_delete_request, :photo_uri, :group_ids, :xml_response, :xml_text
+    attr_accessor :title, :content, :data, :category, :etag, :group_id, :photo_content_type, :photo_body, :photo_file_name, :photo_send_delete_request, :photo_uri, :group_ids, :xml_response, :xml_text, :birthday
     attr_reader :id, :edit_uri, :modifier_flag, :updated, :batch
 
     ##
@@ -61,6 +61,10 @@ module GoogleContacts
           @group_ids << group["@href"]
           @modifier_flag = :delete if group["@deleted"] == "true"
         end
+      end
+
+      if entry["gContact:birthday"].is_a?(Hash)
+        @birthday = entry["gContact:birthday"]["when"]
       end
 
       # Need to know where to send the update request
@@ -147,6 +151,9 @@ module GoogleContacts
           end
         elsif @group_id
           xml << "  <gContact:groupMembershipInfo deleted='false' href='#{@group_id}'/>\n"
+        end
+        if @birthday.present? && @birthday.is_a?(Date)
+          xml << " <gContact:birthday when='#{@birthday.strftime('%Y-%m-%d')}'>"
         end
 
 
