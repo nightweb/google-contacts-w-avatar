@@ -103,9 +103,13 @@ module GoogleContacts
     end
 
 
-    def add_org_info(type, title)
+    def add_org_info(name=nil, title=nil)
       self.data["gd:organization"] ||= []
-      self.data["gd:organization"]["gd:org#{type.to_s.camelize}"] = title
+      info = {"@rel"=>"http://schemas.google.com/g/2005#other"}
+      info.merge!({"gd:orgTitle" => title}) if title.present?
+      info.merge!({"gd:orgName" => name}) if name.present?
+      self.data["gd:organization"] << info
+
     end
 
     def photo_body=(body)
