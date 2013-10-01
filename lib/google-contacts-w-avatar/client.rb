@@ -172,9 +172,9 @@ module GoogleContacts
           raise InvalidResponse, "Updated but response wasn't a valid element"
         end
         el = Element.new(data["entry"])
-        if el.photo_send_delete_request
-          http_request(:put, URI(api_uri[:photos][:get] % [:base, File.basename(element.id)]), :body => nil, :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag})
-        end
+        #if el.photo_send_delete_request
+        #  http_request(:put, URI(api_uri[:photos][:get] % [:base, File.basename(element.id)]), :body => nil, :headers => {"Content-Type" => "application/atom+xml", "If-Match" => element.etag})
+        #end
         #update_photo!(el)
         el
       #rescue RecordNotFound
