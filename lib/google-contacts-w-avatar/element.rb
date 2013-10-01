@@ -153,7 +153,7 @@ module GoogleContacts
           xml << "  <gContact:groupMembershipInfo deleted='false' href='#{@group_id}'/>\n"
         end
         if @birthday.present? && @birthday.is_a?(Date)
-          xml << " <gContact:birthday when='#{@birthday.strftime('%Y-%m-%d')}'>"
+          xml << " <gContact:birthday when='#{@birthday.strftime('%Y-%m-%d')}'/>"
         end
 
 
